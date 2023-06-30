@@ -1,0 +1,75 @@
+`include "coproc_if.svh"
+
+module coproc_custom0_wrapper (
+input logic unsigned [0:0] clk_i
+, input logic unsigned [0:0] rst_i
+, output logic unsigned [0:0] stream_resp_bus_genfifo_req_o
+, output resp_struct stream_resp_bus_genfifo_wdata_bo
+, input logic unsigned [0:0] stream_resp_bus_genfifo_ack_i
+, input logic unsigned [0:0] stream_req_bus_genfifo_req_i
+, input req_struct stream_req_bus_genfifo_rdata_bi
+, output logic unsigned [0:0] stream_req_bus_genfifo_ack_o
+);
+
+assign stream_req_bus_genfifo_ack_o = stream_req_bus_genfifo_req_i;
+logic unsigned [31:0] ste1_res, ste2_res, ste3_res, ste4_res, x_1_real, x_1_img, x_2_real, x_2_img, resp, a_real, a_img, b_real, b_img, c_real, c_img;
+assign stream_resp_bus_genfifo_wdata_bo = resp;
+
+always @(posedge clk_i)
+    begin
+        if (rst_i)
+            begin
+            stream_resp_bus_genfifo_req_o <= 1'b0;
+            ste1_res <= 0;
+            ste2_res <= 0;
+            ste3_res <= 0;
+            ste4_res <= 0;
+            x_1_real <= 0;
+            x_1_img <= 0;
+            x_2_real <= 0;
+            x_2_img <= 0;
+            resp <= 0;
+            a_real<= 0;
+            a_img <= 0;
+            b_real <= 0;
+            b_img <= 0;
+            c_real <= 0;
+            c_img <= 0;
+            end
+        else
+            begin
+            stream_resp_bus_genfifo_req_o <= 1'b0;
+            if (stream_req_bus_genfifo_rdata_bi.instr_code[1:0] == 0)
+                begin
+                resp <= x_1_img;
+                a_real <= stream_req_bus_genfifo_rdata_bi.src0_data;
+                b_real <= stream_req_bus_genfifo_rdata_bi.src1_data;
+                ste1_res <= stream_req_bus_genfifo_rdata_bi.src0_data*stream_req_bus_genfifo_rdata_bi.src1_data;
+                end
+            else if(stream_req_bus_genfifo_rdata_bi.instr_code[1:0] == 1)
+                begin 
+                resp <= x_2_img;
+                a_img <= stream_req_bus_genfifo_rdata_bi.src0_data;
+                b_img <= stream_req_bus_genfifo_rdata_bi.src1_data;
+                ste2_res <= stream_req_bus_genfifo_rdata_bi.src0_data*stream_req_bus_genfifo_rdata_bi.src1_data;
+                end
+            else if(stream_req_bus_genfifo_rdata_bi.instr_code[1:0] == 2)
+                begin 
+                c_real <= stream_req_bus_genfifo_rdata_bi.src0_data;
+                c_img <= stream_req_bus_genfifo_rdata_bi.src1_data;
+                ste3_res <= a_real*b_img;
+                x_1_real <= c_real + ste1_res - ste2_res;
+                x_2_real <= c_real - ste1_res + ste2_res;
+                resp <= x_1_real;
+                end
+            else if(stream_req_bus_genfifo_rdata_bi.instr_code[1:0] == 3)
+                begin 
+                ste4_res <= b_real*a_img;
+                x_1_img <= c_img + ste1_res + ste2_res;
+                x_2_img <= c_img - ste1_res - ste2_res;
+                resp <= x_2_real;
+                end
+            end
+        end
+    end
+endmodule
